@@ -52,7 +52,7 @@ public class Main {
         String alias = (String) ks.aliases().nextElement();
         PrivateKey pk = (PrivateKey) ks.getKey(alias, PASSWORD);
         Certificate[] chain = ks.getCertificateChain(alias);
-        sign(SRC, String.format(DEST, 1), chain, pk, DigestAlgorithms.SHA256, provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL");
+        sign(SRC, String.format(DEST, 1), chain, pk, "MD5", provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL");
         sign(SRC, String.format(DEST, 2), chain, pk, DigestAlgorithms.SHA512, provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL");
         sign(SRC, String.format(DEST, 3), chain, pk, DigestAlgorithms.SHA256, provider.getName(), CryptoStandard.CADES, "Test Sign", "BPCL");
         sign(SRC, String.format(DEST, 4), chain, pk, DigestAlgorithms.RIPEMD160, provider.getName(), CryptoStandard.CADES, "Test Sign", "BPCL");
