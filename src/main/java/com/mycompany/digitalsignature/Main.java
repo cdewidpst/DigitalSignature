@@ -33,9 +33,16 @@ import com.itextpdf.text.pdf.security.OcspClientBouncyCastle;
 import com.itextpdf.text.pdf.security.PrivateKeySignature;
 import com.itextpdf.text.pdf.security.TSAClient;
 import com.itextpdf.text.pdf.security.TSAClientBouncyCastle;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -50,17 +57,59 @@ import java.util.List;
 
 public class Main {
 
+    public static final String BASEDIR = "C:/Users/prashantagarwal/Desktop/digisign_data/";
     public static final String KEYSTORE = "C:/Users/prashantagarwal/Desktop/digisign_data/ks";
     public static final char[] PASSWORD = "password".toCharArray();
     public static final String SRC = "C:/Users/prashantagarwal/Desktop/digisign_data/invoice_cpy.pdf";
     public static final String DEST = "C:/Users/prashantagarwal/Desktop/digisign_data/hello_signed%s.pdf";
     public static final String IMG = "C:/Users/prashantagarwal/Desktop/digisign_data/sign_small_size.jpg";
+    public static String pfx_file_path, pfx_file_pass, sign_img, src_pdf, dest_pdf;
+
     public static void main(String[] args) throws Exception {
-        for(int i=0; i<args.length;i++){
-            System.out.println(args[i]);
+        String dir1, dir2, dir3, dir4;
+        if (args[0] != null && args[1] != null) {
+            dir1 = BASEDIR + args[0] + "/";
+            File f1 = new File(dir1);
+            if (f1.exists() && f1.isDirectory()) {
+                dir2 = dir1 + "supporting_files/";
+                File f2 = new File(dir2);
+                if (f2.exists() && f2.isDirectory()) {
+                    pfx_file_path = dir2 + "certificate.pfx";
+                    sign_img = dir2 + "sign.jpg";
+                    if (!new File(sign_img).exists()) {
+                        sign_img = null;
+                    }
+                    pfx_file_pass = args[1];
+                    dir4 = dir1 + "unsigned_docs/";
+                    File[] list_files = new File(dir4).listFiles();
+                    dir3 = dir1 + "signed_docs/";
+                    if(!new File(dir3).exists()){
+                        new File(dir3).mkdir();
+                    }
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(dir1 + "log.csv"));
+                    writer.write("SNo,BillDocNo,Status,Remarks\n");
+                    int sno = 0;
+                    for (File file : list_files) {
+                        sno++;
+                        if (file.isFile() && (file.getName().endsWith(".pdf") || file.getName().endsWith(".PDF"))) {
+                            src_pdf = dir4 + file.getName();
+                            System.out.println(src_pdf);
+                            dest_pdf = dir3 + file.getName();
+                            System.out.println(dest_pdf);
+                            signWithoutBouncy(src_pdf, dest_pdf);
+                            writer.write(sno+","+file.getName().toUpperCase().replaceAll(".PDF","")+",S,successfully signed\n");
+//                            file.delete();
+                        }
+                        else{
+                            writer.write(sno+","+file.getName()+",E,File is not PDF\n");
+                        }
+                    }
+                    writer.close();
+                }
+            }
         }
 //        signCert();
-        signWithoutBouncy();
+//        signWithoutBouncy();
 //        BouncyCastleProvider provider = new BouncyCastleProvider();
 //        Security.addProvider(provider);
 //        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -78,11 +127,11 @@ public class Main {
             Certificate[] chain,
             PrivateKey pk, String digestAlgorithm, String provider,
             CryptoStandard subfilter,
-            String reason, String location, 
-                        Collection<CrlClient> crlList,
-			OcspClient ocspClient,
-			TSAClient tsaClient,
-			int estimatedSize)
+            String reason, String location,
+            Collection<CrlClient> crlList,
+            OcspClient ocspClient,
+            TSAClient tsaClient,
+            int estimatedSize)
             throws GeneralSecurityException, IOException, DocumentException {
         // Creating the reader and the stamper
         PdfReader reader = new PdfReader(src);
@@ -106,9 +155,11 @@ public class Main {
 //        PdfTemplate n2 = appearance.getLayer(2);
 //        ColumnText ct = new ColumnText(n2);
 //        ct.setSimpleColumn(n2.getBoundingBox());
-        appearance.setLayer2Text("");
-        appearance.setImage(Image.getInstance(IMG));
-        appearance.setImageScale(-1);
+        if (sign_img != null) {
+            appearance.setLayer2Text("");
+            appearance.setImage(Image.getInstance(IMG));
+            appearance.setImageScale(-1);
+        }
 //        ct.addElement(p);
 //        ct.go();
 // Creating the signature
@@ -116,7 +167,7 @@ public class Main {
         ExternalSignature signature = new PrivateKeySignature(pk, digestAlgorithm, provider);
         MakeSignature.signDetached(appearance, digest, signature, chain, crlList, ocspClient, tsaClient, estimatedSize, subfilter);
     }
-    
+
     public static void signCert() throws Exception {
 //        BouncyCastleProvider provider = new BouncyCastleProvider();
 //        Security.addProvider(provider);
@@ -142,16 +193,17 @@ public class Main {
 //        TSAClient tsaClient = new TSAClientBouncyCastle(tsaUrl, tsaUser, tsaPass);
 //        sign(SRC, "resources/pfx_signed_alice.pdf", chain, pk, "MD5", provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL",crlList,null,null,0);
     }
-    
-    public static void signWithoutBouncy()throws Exception{
+
+    public static void signWithoutBouncy(String src_pdf, String dest_pdf) throws Exception {
         KeyStore ks = KeyStore.getInstance("pkcs12");
-        ks.load(new FileInputStream("C:/Users/prashantagarwal/Desktop/digisign_data/alice.pfx"), "testpassword".toCharArray());
+//        ks.load(new FileInputStream("C:/Users/prashantagarwal/Desktop/digisign_data/alice.pfx"), "testpassword".toCharArray());
 //        ks.load(new FileInputStream("C:/Users/prashantagarwal/Desktop/digisign_data/certificate.pfx"), "passw0rd".toCharArray());
-        String alias = (String)ks.aliases().nextElement();
+        ks.load(new FileInputStream(pfx_file_path), pfx_file_pass.toCharArray());
+        String alias = (String) ks.aliases().nextElement();
         System.err.println(alias);
-        PrivateKey pk = (PrivateKey) ks.getKey(alias, "testpassword".toCharArray());
+        PrivateKey pk = (PrivateKey) ks.getKey(alias, pfx_file_pass.toCharArray());
 //        PrivateKey pk = (PrivateKey) ks.getKey(alias, "passw0rd".toCharArray());
         Certificate[] chain = ks.getCertificateChain(alias);
-        sign(SRC, "C:/Users/prashantagarwal/Desktop/digisign_data/pfx_signed_without_bouncy.pdf", chain, pk, "MD5", null, CryptoStandard.CMS, "Test Sign", "BPCL",null,null,null,0);
-    }   
+        sign(src_pdf, dest_pdf, chain, pk, "MD5", null, CryptoStandard.CMS, "Test Sign", "BPCL", null, null, null, 1500);
+    }
 }
