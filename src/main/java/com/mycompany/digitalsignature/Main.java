@@ -45,17 +45,20 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+//import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
+//import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Main {
 
-    public static final String KEYSTORE = "resources/ks";
+    public static final String KEYSTORE = "C:/Users/prashantagarwal/Desktop/digisign_data/ks";
     public static final char[] PASSWORD = "password".toCharArray();
-    public static final String SRC = "resources/invoice_cpy.pdf";
-    public static final String DEST = "resources/hello_signed%s.pdf";
-    public static final String IMG = "resources/sign_small_size.jpg";
+    public static final String SRC = "C:/Users/prashantagarwal/Desktop/digisign_data/invoice_cpy.pdf";
+    public static final String DEST = "C:/Users/prashantagarwal/Desktop/digisign_data/hello_signed%s.pdf";
+    public static final String IMG = "C:/Users/prashantagarwal/Desktop/digisign_data/sign_small_size.jpg";
     public static void main(String[] args) throws Exception {
+        for(int i=0; i<args.length;i++){
+            System.out.println(args[i]);
+        }
 //        signCert();
         signWithoutBouncy();
 //        BouncyCastleProvider provider = new BouncyCastleProvider();
@@ -115,40 +118,40 @@ public class Main {
     }
     
     public static void signCert() throws Exception {
-        BouncyCastleProvider provider = new BouncyCastleProvider();
-        Security.addProvider(provider);
-        KeyStore ks = KeyStore.getInstance("pkcs12", provider.getName());
+//        BouncyCastleProvider provider = new BouncyCastleProvider();
+//        Security.addProvider(provider);
+//        KeyStore ks = KeyStore.getInstance("pkcs12", provider.getName());
 //        ks.load(new FileInputStream("resources/alice.pfx"), "testpassword".toCharArray());
-        ks.load(new FileInputStream("resources/certificate.pfx"), "passw0rd".toCharArray());
-        String alias = (String)ks.aliases().nextElement();
-        System.err.println(alias);
-        PrivateKey pk = (PrivateKey) ks.getKey(alias, "".toCharArray());
-        Certificate[] chain = ks.getCertificateChain(alias);
-        for(int i=0 ; i< chain.length;i++) {
-            X509Certificate cert = (X509Certificate)chain[i];
-            System.out.println(String.format("[%s] %s", i, cert.getSubjectDN()));
-            System.out.println(CertificateUtil.getCRLURL(cert));
-            System.out.println(CertificateUtil.getOCSPURL(cert));
-            System.out.println(CertificateUtil.getTSAURL(cert));
-        }
-        List<CrlClient> crlList = new ArrayList<CrlClient>();
+//        ks.load(new FileInputStream("resources/certificate.pfx"), "passw0rd".toCharArray());
+//        String alias = (String)ks.aliases().nextElement();
+//        System.err.println(alias);
+//        PrivateKey pk = (PrivateKey) ks.getKey(alias, "".toCharArray());
+//        Certificate[] chain = ks.getCertificateChain(alias);
+//        for(int i=0 ; i< chain.length;i++) {
+//            X509Certificate cert = (X509Certificate)chain[i];
+//            System.out.println(String.format("[%s] %s", i, cert.getSubjectDN()));
+//            System.out.println(CertificateUtil.getCRLURL(cert));
+//            System.out.println(CertificateUtil.getOCSPURL(cert));
+//            System.out.println(CertificateUtil.getTSAURL(cert));
+//        }
+//        List<CrlClient> crlList = new ArrayList<CrlClient>();
 //        crlList.add(new CrlClientOnline());
-        crlList.add(new CrlClientOnline(chain));
+//        crlList.add(new CrlClientOnline(chain));
 
 //        OcspClient ocspClient = new OcspClientBouncyCastle();
 //        TSAClient tsaClient = new TSAClientBouncyCastle(tsaUrl, tsaUser, tsaPass);
-        sign(SRC, "resources/pfx_signed_alice.pdf", chain, pk, "MD5", provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL",crlList,null,null,0);
+//        sign(SRC, "resources/pfx_signed_alice.pdf", chain, pk, "MD5", provider.getName(), CryptoStandard.CMS, "Test Sign", "BPCL",crlList,null,null,0);
     }
     
     public static void signWithoutBouncy()throws Exception{
         KeyStore ks = KeyStore.getInstance("pkcs12");
-        ks.load(new FileInputStream("resources/alice.pfx"), "testpassword".toCharArray());
-//        ks.load(new FileInputStream("resources/certificate.pfx"), "passw0rd".toCharArray());
+        ks.load(new FileInputStream("C:/Users/prashantagarwal/Desktop/digisign_data/alice.pfx"), "testpassword".toCharArray());
+//        ks.load(new FileInputStream("C:/Users/prashantagarwal/Desktop/digisign_data/certificate.pfx"), "passw0rd".toCharArray());
         String alias = (String)ks.aliases().nextElement();
         System.err.println(alias);
         PrivateKey pk = (PrivateKey) ks.getKey(alias, "testpassword".toCharArray());
 //        PrivateKey pk = (PrivateKey) ks.getKey(alias, "passw0rd".toCharArray());
         Certificate[] chain = ks.getCertificateChain(alias);
-        sign(SRC, "resources/pfx_signed_without_bouncy.pdf", chain, pk, "MD5", null, CryptoStandard.CMS, "Test Sign", "BPCL",null,null,null,0);
+        sign(SRC, "C:/Users/prashantagarwal/Desktop/digisign_data/pfx_signed_without_bouncy.pdf", chain, pk, "MD5", null, CryptoStandard.CMS, "Test Sign", "BPCL",null,null,null,0);
     }   
 }
