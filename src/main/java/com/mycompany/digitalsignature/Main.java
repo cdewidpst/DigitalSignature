@@ -33,12 +33,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Timestamp;
 import java.security.cert.Certificate;
 import java.util.Collection;
 import java.util.Date;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
 
 public class Main {
 
@@ -52,7 +52,7 @@ public class Main {
     public static String SIGNED_DOCS_DIR_NAME = "signed_docs/";
     public static String LOG_FILE_NAME = "log.csv";
     public static String LOG_FILE_DELIMITER = ",";
-    public static String TMP_LOG_FILE_NAME = BASEDIR + "logTmp.csv";
+    public static String MAIN_LOG_FILE_DIR = "main_logs/";
     public static String DIGEST_ALGO = "SHA512";
     public static String SIGN_REASON = "Test Sign";
     public static String SIGN_LOCATION = "BPCL";
@@ -62,73 +62,106 @@ public class Main {
     public static int SIGN_POSITION_Y_COOR = 68;
     public static int SIGN_BOX_LENGTH = 90;
     public static int SIGN_BOX_HEIGHT = 42;
-    
-    public static final String CONFIG_PATH = "C:/Users/prashantagarwal/Desktop/digisign_data/config.json";
-    
-    public static String status, remarks, msg_code;
+    public static String START_AND_END = "*****************************************************";
+
+    public static String CONFIG_PATH = "config.json";
+
+    public static String status, remarks, msg_code, main_log_file;
     public static PrivateKey pk;
     public static Certificate[] chain;
     public static Date date;
+
     public static void main(String[] args) throws Exception {
         date = new Date();
+        System.out.println(START_AND_END);
+        System.out.println("Execution Start: " + date.toString());
         int sno = 0;
+        if (args.length > 0) {
+            if (args[0] != null) {
+                CONFIG_PATH = args[0];
+            }
+        }
+        if (CONFIG_PATH == null) {
+            System.out.println("no config path given");
+            return;
+        }
         readConfig(CONFIG_PATH);
         String pfx_file_path, pfx_file_pass, sign_img, src_pdf, dest_pdf;
         BufferedWriter writerTmp, writer;
         String user_dir, supporting_dir, unsigned_docs_dir, signed_docs_dir;
         File user_dir_file, supporting_dir_file, unsigned_docs_dir_file, signed_docs_dir_file;
         try {
-            writerTmp = new BufferedWriter(new FileWriter(TMP_LOG_FILE_NAME));
+            main_log_file = BASEDIR + MAIN_LOG_FILE_DIR + System.currentTimeMillis() + ".csv";
+            if (!new File(BASEDIR + MAIN_LOG_FILE_DIR).exists()) {
+                new File(BASEDIR + MAIN_LOG_FILE_DIR).mkdirs();
+            }
+            writerTmp = new BufferedWriter(new FileWriter(main_log_file));
             writeLog(writerTmp, "Sno", "BillDocNo", "Status", "MessageCode", "Remarks");
+            writeLog(writerTmp, "", "Start DateTime", "", "", date.toString());
             writeLog(writerTmp, "1", "", "S", "S01", "writer object creation successful.");
         } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            System.out.println("Execution End : " + new Date().toString());
+            System.out.println(START_AND_END);
             return;
         }
-        if (args.length == 0) {
-            writeLog(writerTmp, "2", "", "E", "E02", "args[0] i.e. sy-uname not specified.");
+        if (args.length == 1) {
+            writeLog(writerTmp, "2", "", "E", "E02", "args[1] i.e. sy-uname not specified.");
+            writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
             writerTmp.close();
+            System.out.println("Execution end : " + new Date().toString());
+            System.out.println(START_AND_END);
             return;
         } else {
-            if (args[0] == null) {
-                writeLog(writerTmp, "2", "", "E", "E02", "args[0] i.e. sy-uname not specified.");
+            if (args[1] == null) {
+                writeLog(writerTmp, "2", "", "E", "E02", "args[1] i.e. sy-uname not specified.");
+                writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
                 writerTmp.close();
+                System.out.println("Execution end : " + new Date().toString());
+                System.out.println(START_AND_END);
                 return;
             } else {
                 try {
-                    writer = new BufferedWriter(new FileWriter(BASEDIR + args[0] + "/" + LOG_FILE_NAME));
+//                    if (!new File(BASEDIR + args[1] + "/").exists()) {
+//                        new File(BASEDIR + args[1] + "/").mkdirs();
+//                    }
+                    writer = new BufferedWriter(new FileWriter(BASEDIR + args[1] + "/" + LOG_FILE_NAME));
                     writeLog(writer, "Sno", "BillDocNo", "Status", "MessageCode", "Remarks");
-                    sno++;
-                    writeLog(writer, sno + "", "Start DateTime", "", "", date.toString());
+//                    sno++;
+                    writeLog(writer, "", "Start DateTime", "", "", date.toString());
                     sno++;
                     writeLog(writer, sno + "", "", "S", "S10", "writer object creation successful.");
                     sno++;
-                    writeLog(writer, sno + "", "", "S", "S11", "args[0] i.e. sy-uname present successful.");
+                    writeLog(writer, sno + "", "", "S", "S11", "args[1] i.e. sy-uname present successful.");
                 } catch (Exception exe) {
                     writeLog(writerTmp, "3", "", "E", "E03", exe.getMessage());
+                    writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
                     writerTmp.close();
+                    System.out.println("Execution end : " + new Date().toString());
+                    System.out.println(START_AND_END);
                     return;
                 }
             }
         }
-        if (args.length < 2) {
+        if (args.length < 3) {
             sno++;
-            writeLog(writer, sno + "", "", "E", "E12", "args[1] i.e. password not specified.");
+            writeLog(writer, sno + "", "", "E", "E12", "args[2] i.e. password not specified.");
             closeWriter(writer, writerTmp);
             return;
         } else {
-            if (args[1] == null) {
+            if (args[2] == null) {
                 sno++;
-                writeLog(writer, sno + "", "", "E", "E12", "args[1] i.e. password not specified.");
+                writeLog(writer, sno + "", "", "E", "E12", "args[2] i.e. password not specified.");
                 closeWriter(writer, writerTmp);
                 return;
             } else {
-                pfx_file_pass = args[1];
+                pfx_file_pass = args[2];
                 sno++;
-                writeLog(writer, sno + "", "", "S", "S12", "args[1] i.e. password present successful.");
+                writeLog(writer, sno + "", "", "S", "S12", "args[2] i.e. password present successful.");
             }
         }
         try {
-            user_dir = BASEDIR + args[0] + "/";
+            user_dir = BASEDIR + args[1] + "/";
             user_dir_file = new File(user_dir);
             sno++;
             writeLog(writer, sno + "", "", "S", "S13", "User dir file object creation successful.");
@@ -319,76 +352,76 @@ public class Main {
         }
         closeWriter(writer, writerTmp);
     }
-    
-    public static void readConfig(String config_path){
-        try{
+
+    public static void readConfig(String config_path) {
+        try {
             JSONParser parser = new JSONParser();
-            JSONObject obj = (JSONObject)parser.parse(new FileReader(config_path));
-            if((String)(String)obj.get("base_dir") != null){
-                BASEDIR = (String)obj.get("base_dir");
+            JSONObject obj = (JSONObject) parser.parse(new FileReader(config_path));
+            if ((String) (String) obj.get("base_dir") != null) {
+                BASEDIR = (String) obj.get("base_dir");
             }
-            if((String)obj.get("cert_file_name") != null){
-                CERT_FILE_NAME = (String)obj.get("cert_file_name");
+            if ((String) obj.get("cert_file_name") != null) {
+                CERT_FILE_NAME = (String) obj.get("cert_file_name");
             }
-            if((String)obj.get("cert_file_ext") != null){
-                CERT_FILE_EXT = (String)obj.get("cert_file_ext");
+            if ((String) obj.get("cert_file_ext") != null) {
+                CERT_FILE_EXT = (String) obj.get("cert_file_ext");
             }
-            if((String)obj.get("sign_img_file_name") != null){
-                SIGN_IMG_FILE_NAME = (String)obj.get("sign_img_file_name");
+            if ((String) obj.get("sign_img_file_name") != null) {
+                SIGN_IMG_FILE_NAME = (String) obj.get("sign_img_file_name");
             }
-            if((String)obj.get("sign_img_file_ext") != null){
-                SIGN_IMG_FILE_EXT = (String)obj.get("sign_img_file_ext");
+            if ((String) obj.get("sign_img_file_ext") != null) {
+                SIGN_IMG_FILE_EXT = (String) obj.get("sign_img_file_ext");
             }
-            if((String)obj.get("supp_files_dir_name") != null){
-                SUPP_FILES_DIR_NAME = (String)obj.get("supp_files_dir_name");
+            if ((String) obj.get("supp_files_dir_name") != null) {
+                SUPP_FILES_DIR_NAME = (String) obj.get("supp_files_dir_name");
             }
-            if((String)obj.get("unsigned_docs_dir_name") != null){
-                UNSIGNED_DOCS_DIR_NAME = (String)obj.get("unsigned_docs_dir_name");
+            if ((String) obj.get("unsigned_docs_dir_name") != null) {
+                UNSIGNED_DOCS_DIR_NAME = (String) obj.get("unsigned_docs_dir_name");
             }
-            if((String)obj.get("signed_docs_dir_name") != null){
-                SIGNED_DOCS_DIR_NAME = (String)obj.get("signed_docs_dir_name");
+            if ((String) obj.get("signed_docs_dir_name") != null) {
+                SIGNED_DOCS_DIR_NAME = (String) obj.get("signed_docs_dir_name");
             }
-            if((String)obj.get("log_file_name") != null){
-                LOG_FILE_NAME = (String)obj.get("log_file_name");
+            if ((String) obj.get("log_file_name") != null) {
+                LOG_FILE_NAME = (String) obj.get("log_file_name");
             }
-            if((String)obj.get("log_file_delimiter") != null){
-                LOG_FILE_DELIMITER = (String)obj.get("log_file_delimiter");
+            if ((String) obj.get("log_file_delimiter") != null) {
+                LOG_FILE_DELIMITER = (String) obj.get("log_file_delimiter");
             }
-            if((String)obj.get("tmp_log_file_name") != null){
-                TMP_LOG_FILE_NAME = BASEDIR +  (String)obj.get("tmp_log_file_name");
+            if ((String) obj.get("main_log_file_name") != null) {
+                MAIN_LOG_FILE_DIR = BASEDIR + (String) obj.get("tmp_log_file_name");
             }
-            if((String)obj.get("digest_algo") != null){
-                DIGEST_ALGO = (String)obj.get("digest_algo");
+            if ((String) obj.get("digest_algo") != null) {
+                DIGEST_ALGO = (String) obj.get("digest_algo");
             }
-            if((String)obj.get("sign_reason") != null){
-                SIGN_REASON = (String)obj.get("sign_reason");
+            if ((String) obj.get("sign_reason") != null) {
+                SIGN_REASON = (String) obj.get("sign_reason");
             }
-            if((String)obj.get("sign_location") != null){
-                SIGN_LOCATION = (String)obj.get("sign_location");
+            if ((String) obj.get("sign_location") != null) {
+                SIGN_LOCATION = (String) obj.get("sign_location");
             }
-            if((String)obj.get("sign_field_name") != null){
-                SIGN_FIELD_NAME = (String)obj.get("sign_field_name");
+            if ((String) obj.get("sign_field_name") != null) {
+                SIGN_FIELD_NAME = (String) obj.get("sign_field_name");
             }
-            if(Integer.parseInt((String)obj.get("estimated_size_signed")) != -1){
-                ESTIMATED_SIZE_SIGNED = Integer.parseInt((String)obj.get("estimated_size_signed"));
+            if (Integer.parseInt((String) obj.get("estimated_size_signed")) != -1) {
+                ESTIMATED_SIZE_SIGNED = Integer.parseInt((String) obj.get("estimated_size_signed"));
             }
-            if(Integer.parseInt((String)obj.get("sign_position_x_coor")) != -1){
-                SIGN_POSITION_X_COOR = Integer.parseInt((String)obj.get("sign_position_x_coor"));
+            if (Integer.parseInt((String) obj.get("sign_position_x_coor")) != -1) {
+                SIGN_POSITION_X_COOR = Integer.parseInt((String) obj.get("sign_position_x_coor"));
             }
-            if(Integer.parseInt((String)obj.get("sign_position_y_coor")) != -1){
-                SIGN_POSITION_Y_COOR = Integer.parseInt((String)obj.get("sign_position_y_coor"));
+            if (Integer.parseInt((String) obj.get("sign_position_y_coor")) != -1) {
+                SIGN_POSITION_Y_COOR = Integer.parseInt((String) obj.get("sign_position_y_coor"));
             }
-            if(Integer.parseInt((String)obj.get("sign_box_length")) != -1){
-                SIGN_BOX_LENGTH = Integer.parseInt((String)obj.get("sign_box_length"));
+            if (Integer.parseInt((String) obj.get("sign_box_length")) != -1) {
+                SIGN_BOX_LENGTH = Integer.parseInt((String) obj.get("sign_box_length"));
             }
-            if(Integer.parseInt((String)obj.get("sign_box_height")) != -1){
-                SIGN_BOX_HEIGHT = Integer.parseInt((String)obj.get("sign_box_height"));
+            if (Integer.parseInt((String) obj.get("sign_box_height")) != -1) {
+                SIGN_BOX_HEIGHT = Integer.parseInt((String) obj.get("sign_box_height"));
             }
-        }catch(Exception ex){
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
     }
-    
+
     public static boolean getCertificateAndPk(String pfx_file_path, String pfx_file_pass) {
         try {
             KeyStore ks = KeyStore.getInstance("pkcs12");
@@ -429,9 +462,9 @@ public class Main {
             appearance.setReason(reason);
             appearance.setLocation(location);
             appearance.setVisibleSignature(new Rectangle(SIGN_POSITION_X_COOR, SIGN_POSITION_Y_COOR,
-                                                            SIGN_POSITION_X_COOR + SIGN_BOX_LENGTH, 
-                                                            SIGN_POSITION_Y_COOR + SIGN_BOX_HEIGHT),
-                                            1, SIGN_FIELD_NAME);
+                    SIGN_POSITION_X_COOR + SIGN_BOX_LENGTH,
+                    SIGN_POSITION_Y_COOR + SIGN_BOX_HEIGHT),
+                    1, SIGN_FIELD_NAME);
             if (sign_img != null) {
                 appearance.setLayer2Text("");
                 appearance.setImage(Image.getInstance(sign_img));
@@ -490,13 +523,20 @@ public class Main {
             writeLog(writer, "", "End DateTime", "", "", date.toString());
             writer.close();
             writerTmp.close();
-            new File(TMP_LOG_FILE_NAME).delete();
+            new File(main_log_file).delete();
+            System.out.println("Execution end : " + new Date().toString());
+            System.out.println(START_AND_END);
         } catch (Exception ex) {
             writeLog(writerTmp, "3", "", "E", "E04", "Error writing log file." + ex.getMessage());
+            writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
+            System.out.println("Execution end : " + new Date().toString());
+            System.out.println(START_AND_END);
             try {
                 writerTmp.close();
             } catch (Exception ex1) {
                 System.out.println(ex1.getMessage());
+                System.out.println("Execution end : " + new Date().toString());
+                System.out.println(START_AND_END);
             }
         }
     }
