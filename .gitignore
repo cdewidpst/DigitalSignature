@@ -1,4 +1,3 @@
 *.pdf
-resources/
 target/
 .README.md.swp

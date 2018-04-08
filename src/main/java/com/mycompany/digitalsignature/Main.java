@@ -28,37 +28,42 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Date;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 
 public class Main {
 
-    public static final String BASEDIR = "C:/Users/prashantagarwal/Desktop/digisign_data/";
-    public static final String CERT_FILE_NAME = "certificate";
-    public static final String CERT_FILE_EXT = "pfx";
-    public static final String SIGN_IMG_FILE_NAME = "sign";
-    public static final String SIGN_IMG_FILE_EXT = "jpg";
-    public static final String SUPP_FILES_DIR_NAME = "supporting_files/";
-    public static final String UNSIGNED_DOCS_DIR_NAME = "unsigned_docs/";
-    public static final String SIGNED_DOCS_DIR_NAME = "signed_docs/";
-    public static final String LOG_FILE_NAME = "log.csv";
-    public static final String LOG_FILE_DELIMITER = ",";
-    public static final String TMP_LOG_FILE_NAME = BASEDIR + "/" + "logTmp.csv";
-    public static final String DIGEST_ALGO = "SHA512";
-    public static final String SIGN_REASON = "Test Sign";
-    public static final String SIGN_LOCATION = "BPCL";
-    public static final String SIGN_FIELD_NAME = "sign_bpcl";
-    public static final int ESTIMATED_SIZE_SIGNED = 1500;
-    public static final int SIGN_POSITION_X_COOR = 380;
-    public static final int SIGN_POSITION_Y_COOR = 68;
-    public static final int SIGN_BOX_LENGTH = 90;
-    public static final int SIGN_BOX_HEIGHT = 42;
+    public static String BASEDIR = "C:/Users/prashantagarwal/Desktop/digisign_data/";
+    public static String CERT_FILE_NAME = "certificate";
+    public static String CERT_FILE_EXT = "pfx";
+    public static String SIGN_IMG_FILE_NAME = "sign";
+    public static String SIGN_IMG_FILE_EXT = "jpg";
+    public static String SUPP_FILES_DIR_NAME = "supporting_files/";
+    public static String UNSIGNED_DOCS_DIR_NAME = "unsigned_docs/";
+    public static String SIGNED_DOCS_DIR_NAME = "signed_docs/";
+    public static String LOG_FILE_NAME = "log.csv";
+    public static String LOG_FILE_DELIMITER = ",";
+    public static String TMP_LOG_FILE_NAME = BASEDIR + "/" + "logTmp.csv";
+    public static String DIGEST_ALGO = "SHA512";
+    public static String SIGN_REASON = "Test Sign";
+    public static String SIGN_LOCATION = "BPCL";
+    public static String SIGN_FIELD_NAME = "sign_bpcl";
+    public static int ESTIMATED_SIZE_SIGNED = 1500;
+    public static int SIGN_POSITION_X_COOR = 380;
+    public static int SIGN_POSITION_Y_COOR = 68;
+    public static int SIGN_BOX_LENGTH = 90;
+    public static int SIGN_BOX_HEIGHT = 42;
+    
+    public static final String CONFIG_PATH = "C:/Users/prashantagarwal/Desktop/digisign_data/config.json";
     
     public static String status, remarks, msg_code;
     public static PrivateKey pk;
@@ -67,6 +72,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         date = new Date();
         int sno = 0;
+        readConfig(CONFIG_PATH);
         String pfx_file_path, pfx_file_pass, sign_img, src_pdf, dest_pdf;
         BufferedWriter writerTmp, writer;
         String user_dir, supporting_dir, unsigned_docs_dir, signed_docs_dir;
@@ -313,7 +319,76 @@ public class Main {
         }
         closeWriter(writer, writerTmp);
     }
-
+    
+    public static void readConfig(String config_path){
+        try{
+            JSONParser parser = new JSONParser();
+            JSONObject obj = (JSONObject)parser.parse(new FileReader(config_path));
+            if((String)(String)obj.get("base_dir") != null){
+                BASEDIR = (String)obj.get("base_dir");
+            }
+            if((String)obj.get("cert_file_name") != null){
+                CERT_FILE_NAME = (String)obj.get("cert_file_name");
+            }
+            if((String)obj.get("cert_file_ext") != null){
+                CERT_FILE_EXT = (String)obj.get("cert_file_ext");
+            }
+            if((String)obj.get("sign_img_file_name") != null){
+                SIGN_IMG_FILE_NAME = (String)obj.get("sign_img_file_name");
+            }
+            if((String)obj.get("sign_img_file_ext") != null){
+                SIGN_IMG_FILE_EXT = (String)obj.get("sign_img_file_ext");
+            }
+            if((String)obj.get("supp_files_dir_name") != null){
+                SUPP_FILES_DIR_NAME = (String)obj.get("supp_files_dir_name");
+            }
+            if((String)obj.get("unsigned_docs_dir_name") != null){
+                UNSIGNED_DOCS_DIR_NAME = (String)obj.get("unsigned_docs_dir_name");
+            }
+            if((String)obj.get("signed_docs_dir_name") != null){
+                SIGNED_DOCS_DIR_NAME = (String)obj.get("signed_docs_dir_name");
+            }
+            if((String)obj.get("log_file_name") != null){
+                LOG_FILE_NAME = (String)obj.get("log_file_name");
+            }
+            if((String)obj.get("log_file_delimiter") != null){
+                LOG_FILE_DELIMITER = (String)obj.get("log_file_delimiter");
+            }
+            if((String)obj.get("tmp_log_file_name") != null){
+                TMP_LOG_FILE_NAME = BASEDIR +  (String)obj.get("tmp_log_file_name");
+            }
+            if((String)obj.get("digest_algo") != null){
+                DIGEST_ALGO = (String)obj.get("digest_algo");
+            }
+            if((String)obj.get("sign_reason") != null){
+                SIGN_REASON = (String)obj.get("sign_reason");
+            }
+            if((String)obj.get("sign_location") != null){
+                SIGN_LOCATION = (String)obj.get("sign_location");
+            }
+            if((String)obj.get("sign_field_name") != null){
+                SIGN_FIELD_NAME = (String)obj.get("sign_field_name");
+            }
+            if(Integer.parseInt((String)obj.get("estimated_size_signed")) != -1){
+                ESTIMATED_SIZE_SIGNED = Integer.parseInt((String)obj.get("estimated_size_signed"));
+            }
+            if(Integer.parseInt((String)obj.get("sign_position_x_coor")) != -1){
+                SIGN_POSITION_X_COOR = Integer.parseInt((String)obj.get("sign_position_x_coor"));
+            }
+            if(Integer.parseInt((String)obj.get("sign_position_y_coor")) != -1){
+                SIGN_POSITION_Y_COOR = Integer.parseInt((String)obj.get("sign_position_y_coor"));
+            }
+            if(Integer.parseInt((String)obj.get("sign_box_length")) != -1){
+                SIGN_BOX_LENGTH = Integer.parseInt((String)obj.get("sign_box_length"));
+            }
+            if(Integer.parseInt((String)obj.get("sign_box_height")) != -1){
+                SIGN_BOX_HEIGHT = Integer.parseInt((String)obj.get("sign_box_height"));
+            }
+        }catch(Exception ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+    
     public static boolean getCertificateAndPk(String pfx_file_path, String pfx_file_pass) {
         try {
             KeyStore ks = KeyStore.getInstance("pkcs12");

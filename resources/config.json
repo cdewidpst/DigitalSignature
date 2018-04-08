@@ -1,0 +1,22 @@
+{
+	"base_dir": "C:/Users/prashantagarwal/Desktop/digisign_data/",
+	"cert_file_name": "certificate",
+	"cert_file_ext": "pfx",
+	"sign_img_file_name": "sign1",
+	"sign_img_file_ext": "jpg",
+	"supp_files_dir_name": "supporting_files/",
+	"unsigned_docs_dir_name": "unsigned_docs/",
+	"signed_docs_dir_name": "signed_docs/",
+	"log_file_name": "log.csv",
+	"log_file_delimiter": ",",
+	"tmp_log_file_name": "logTmp.csv",
+	"digest_algo": "SHA-512",
+	"sign_reason": "Test Sign",
+	"sign_location": "BPCL",
+	"sign_field_name": "sign_bpcl",
+	"estimated_size_signed": "1500",
+	"sign_position_x_coor": "380",
+	"sign_position_y_coor": "68",
+	"sign_box_length": "90",
+	"sign_box_height": "42"
+}
