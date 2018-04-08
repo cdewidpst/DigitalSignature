@@ -52,7 +52,7 @@ public class Main {
     public static String SIGNED_DOCS_DIR_NAME = "signed_docs/";
     public static String LOG_FILE_NAME = "log.csv";
     public static String LOG_FILE_DELIMITER = ",";
-    public static String TMP_LOG_FILE_NAME = BASEDIR + "/" + "logTmp.csv";
+    public static String TMP_LOG_FILE_NAME = BASEDIR + "logTmp.csv";
     public static String DIGEST_ALGO = "SHA512";
     public static String SIGN_REASON = "Test Sign";
     public static String SIGN_LOCATION = "BPCL";
