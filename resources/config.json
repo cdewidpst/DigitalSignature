@@ -14,7 +14,7 @@
 	"sign_reason": "Test Sign",
 	"sign_location": "BPCL",
 	"sign_field_name": "sign_bpcl",
-	"estimated_size_signed": "1500",
+	"estimated_size_signed": "2500",
 	"sign_position_x_coor": "380",
 	"sign_position_y_coor": "68",
 	"sign_box_length": "90",
