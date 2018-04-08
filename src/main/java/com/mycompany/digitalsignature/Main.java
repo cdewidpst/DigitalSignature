@@ -33,7 +33,9 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.text.DateFormat;
 import java.util.Collection;
+import java.util.Date;
 
 public class Main {
 
@@ -48,10 +50,22 @@ public class Main {
     public static final String LOG_FILE_NAME = "log.csv";
     public static final String LOG_FILE_DELIMITER = ",";
     public static final String TMP_LOG_FILE_NAME = BASEDIR + "/" + "logTmp.csv";
+    public static final String DIGEST_ALGO = "SHA512";
+    public static final String SIGN_REASON = "Test Sign";
+    public static final String SIGN_LOCATION = "BPCL";
+    public static final String SIGN_FIELD_NAME = "sign_bpcl";
+    public static final int ESTIMATED_SIZE_SIGNED = 1500;
+    public static final int SIGN_POSITION_X_COOR = 380;
+    public static final int SIGN_POSITION_Y_COOR = 68;
+    public static final int SIGN_BOX_LENGTH = 90;
+    public static final int SIGN_BOX_HEIGHT = 42;
     
     public static String status, remarks, msg_code;
-    
+    public static PrivateKey pk;
+    public static Certificate[] chain;
+    public static Date date;
     public static void main(String[] args) throws Exception {
+        date = new Date();
         int sno = 0;
         String pfx_file_path, pfx_file_pass, sign_img, src_pdf, dest_pdf;
         BufferedWriter writerTmp, writer;
@@ -77,6 +91,8 @@ public class Main {
                 try {
                     writer = new BufferedWriter(new FileWriter(BASEDIR + args[0] + "/" + LOG_FILE_NAME));
                     writeLog(writer, "Sno", "BillDocNo", "Status", "MessageCode", "Remarks");
+                    sno++;
+                    writeLog(writer, sno + "", "Start DateTime", "", "", date.toString());
                     sno++;
                     writeLog(writer, sno + "", "", "S", "S10", "writer object creation successful.");
                     sno++;
@@ -223,20 +239,20 @@ public class Main {
                 signed_docs_dir_file.delete();
                 signed_docs_dir_flag = 'X';
                 sno++;
-                writeLog(writer, sno + "", "", "S", "S24", "Signed Docs dir does not exists.");
+                writeLog(writer, sno + "", "", "S", "S24-A", "Signed Docs dir does not exists but file exists.");
             } else {
                 sno++;
-                writeLog(writer, sno + "", "", "S", "S24", "Signed Docs dir exists.");
+                writeLog(writer, sno + "", "", "S", "S24-B", "Signed Docs dir exists.");
                 try {
                     File[] file_tmp = signed_docs_dir_file.listFiles();
                     for (File file : file_tmp) {
                         file.delete();
                     }
                     sno++;
-                    writeLog(writer, sno + "", "", "S", "S25", "Making Signed Docs dir empty successful.");
+                    writeLog(writer, sno + "", "", "S", "S25-A", "Making Signed Docs dir empty successful.");
                 } catch (Exception e5) {
                     sno++;
-                    writeLog(writer, sno + "", "", "E", "E25", e5.getMessage());
+                    writeLog(writer, sno + "", "", "E", "E25-A", e5.getMessage());
                     closeWriter(writer, writerTmp);
                     return;
                 }
@@ -244,16 +260,16 @@ public class Main {
         } else {
             signed_docs_dir_flag = 'X';
             sno++;
-            writeLog(writer, sno + "", "", "S", "S24", "Signed Docs dir does not exists.");
+            writeLog(writer, sno + "", "", "S", "S24-C", "Signed Docs dir does not exists.");
         }
         if (signed_docs_dir_flag == 'X') {
             try {
                 signed_docs_dir_file.mkdirs();
                 sno++;
-                writeLog(writer, sno + "", "", "S", "S26", "Signed docs dir file folder creation successful.");
+                writeLog(writer, sno + "", "", "S", "S25-B", "Signed docs dir file folder creation successful.");
             } catch (Exception e6) {
                 sno++;
-                writeLog(writer, sno + "", "", "E", "E26", e6.getMessage());
+                writeLog(writer, sno + "", "", "E", "E25-B", e6.getMessage());
                 closeWriter(writer, writerTmp);
                 return;
             }
@@ -261,12 +277,21 @@ public class Main {
         File[] unsigned_docs_files = unsigned_docs_dir_file.listFiles();
         if (unsigned_docs_files.length == 0) {
             sno++;
-            writeLog(writer, sno + "", "", "E", "E27", "No unsigned docs present.");
+            writeLog(writer, sno + "", "", "E", "E26", "No unsigned docs present.");
             closeWriter(writer, writerTmp);
             return;
         } else {
             sno++;
-            writeLog(writer, sno + "", "", "S", "S27", "Unsigned docs dir not empty successful.");
+            writeLog(writer, sno + "", "", "S", "S26", "Unsigned docs dir not empty successful.");
+        }
+        if (getCertificateAndPk(pfx_file_path, pfx_file_pass)) {
+            sno++;
+            writeLog(writer, sno + "", "", "S", "S27", "Read certificate and password verified successful.");
+        } else {
+            sno++;
+            writeLog(writer, sno + "", "", status, msg_code, remarks);
+            closeWriter(writer, writerTmp);
+            return;
         }
         for (File file : unsigned_docs_files) {
             sno++;
@@ -276,14 +301,38 @@ public class Main {
                 status = null;
                 msg_code = null;
                 remarks = null;
-                signWithoutBouncy(src_pdf, dest_pdf, pfx_file_path, pfx_file_pass, sign_img);
+                sign(src_pdf, dest_pdf, sign_img,
+                        chain, pk, DIGEST_ALGO, null, CryptoStandard.CMS,
+                        SIGN_REASON, SIGN_LOCATION,
+                        null, null, null, ESTIMATED_SIZE_SIGNED);
                 writeLog(writer, sno + "", file.getName().toUpperCase().replaceAll(".PDF", ""), status, msg_code, remarks);
 //                file.delete();
             } else {
-                writeLog(writer, sno + "", file.getName(), "E", "E28", "File is not PDF.");
+                writeLog(writer, sno + "", file.getName(), "E", "E28-A", "File is not PDF.");
             }
         }
         closeWriter(writer, writerTmp);
+    }
+
+    public static boolean getCertificateAndPk(String pfx_file_path, String pfx_file_pass) {
+        try {
+            KeyStore ks = KeyStore.getInstance("pkcs12");
+            ks.load(new FileInputStream(pfx_file_path), pfx_file_pass.toCharArray());
+            String alias = (String) ks.aliases().nextElement();
+            pk = (PrivateKey) ks.getKey(alias, pfx_file_pass.toCharArray());
+            chain = ks.getCertificateChain(alias);
+        } catch (IOException e1) {
+            status = "E";
+            msg_code = "E27-A";
+            remarks = e1.getMessage();
+            return false;
+        } catch (Exception e) {
+            status = "E";
+            msg_code = "E27-B";
+            remarks = e.getMessage();
+            return false;
+        }
+        return true;
     }
 
     public static void sign(String src, String dest, String sign_img,
@@ -304,7 +353,10 @@ public class Main {
             PdfSignatureAppearance appearance = stamper.getSignatureAppearance();
             appearance.setReason(reason);
             appearance.setLocation(location);
-            appearance.setVisibleSignature(new Rectangle(380, 68, 470, 110), 1, "sig");
+            appearance.setVisibleSignature(new Rectangle(SIGN_POSITION_X_COOR, SIGN_POSITION_Y_COOR,
+                                                            SIGN_POSITION_X_COOR + SIGN_BOX_LENGTH, 
+                                                            SIGN_POSITION_Y_COOR + SIGN_BOX_HEIGHT),
+                                            1, SIGN_FIELD_NAME);
             if (sign_img != null) {
                 appearance.setLayer2Text("");
                 appearance.setImage(Image.getInstance(sign_img));
@@ -318,42 +370,17 @@ public class Main {
             remarks = "Successfully signed";
         } catch (IOException e1) {
             status = "E";
-            msg_code = "E31";
+            msg_code = "E28-B";
             remarks = e1.getMessage();
             return;
         } catch (DocumentException e2) {
             status = "E";
-            msg_code = "E32";
+            msg_code = "E28-C";
             remarks = e2.getMessage();
             return;
         } catch (Exception e) {
             status = "E";
-            msg_code = "E33";
-            remarks = e.getMessage();
-            return;
-        }
-    }
-
-    public static void signWithoutBouncy(String src_pdf, 
-                                            String dest_pdf, 
-                                            String pfx_file_path, 
-                                            String pfx_file_pass,
-                                            String sign_img) {
-        try {
-            KeyStore ks = KeyStore.getInstance("pkcs12");
-            ks.load(new FileInputStream(pfx_file_path), pfx_file_pass.toCharArray());
-            String alias = (String) ks.aliases().nextElement();
-            PrivateKey pk = (PrivateKey) ks.getKey(alias, pfx_file_pass.toCharArray());
-            Certificate[] chain = ks.getCertificateChain(alias);
-            sign(src_pdf, dest_pdf, sign_img, chain, pk, "MD5", null, CryptoStandard.CMS, "Test Sign", "BPCL", null, null, null, 1500);
-        } catch (IOException e1) {
-            status = "E";
-            msg_code = "E29";
-            remarks = e1.getMessage();
-            return;
-        } catch (Exception e) {
-            status = "E";
-            msg_code = "E30";
+            msg_code = "E28-D";
             remarks = e.getMessage();
             return;
         }
@@ -367,7 +394,7 @@ public class Main {
             String remarks) {
         if (writer != null) {
             try {
-                if(item == ""){
+                if (item == "") {
                     item = "NA";
                 }
                 String writerString = sno + LOG_FILE_DELIMITER
@@ -377,21 +404,24 @@ public class Main {
                         + remarks + LOG_FILE_DELIMITER + "\n";
                 writer.write(writerString);
             } catch (Exception ex) {
-
+                System.out.println(ex.getMessage());
             }
         }
     }
-    public static void closeWriter(BufferedWriter writer, BufferedWriter writerTmp){
-        try{
+
+    public static void closeWriter(BufferedWriter writer, BufferedWriter writerTmp) {
+        try {
+            date = new Date();
+            writeLog(writer, "", "End DateTime", "", "", date.toString());
             writer.close();
             writerTmp.close();
             new File(TMP_LOG_FILE_NAME).delete();
-        }catch(Exception ex){
-            writeLog(writerTmp,"3", "", "E", "E04", "Error writing log file." + ex.getMessage());
-            try{
+        } catch (Exception ex) {
+            writeLog(writerTmp, "3", "", "E", "E04", "Error writing log file." + ex.getMessage());
+            try {
                 writerTmp.close();
-            }catch(Exception ex1){
-                
+            } catch (Exception ex1) {
+                System.out.println(ex1.getMessage());
             }
         }
     }
