@@ -367,6 +367,9 @@ public class Main {
             String remarks) {
         if (writer != null) {
             try {
+                if(item == ""){
+                    item = "NA";
+                }
                 String writerString = sno + LOG_FILE_DELIMITER
                         + item + LOG_FILE_DELIMITER
                         + status + LOG_FILE_DELIMITER
