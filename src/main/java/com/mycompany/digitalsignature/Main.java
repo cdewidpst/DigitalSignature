@@ -106,7 +106,7 @@ public class Main {
             return;
         }
         if (args.length == 1) {
-            writeLog(writerTmp, "2", "", "E", "E02", "args[1] i.e. sy-uname not specified.");
+            writeLog(writerTmp, "2", "", "E", "E02-A", "args[1] i.e. sy-uname not specified.");
             writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
             writerTmp.close();
             System.out.println("Execution end : " + new Date().toString());
@@ -114,7 +114,7 @@ public class Main {
             return;
         } else {
             if (args[1] == null) {
-                writeLog(writerTmp, "2", "", "E", "E02", "args[1] i.e. sy-uname not specified.");
+                writeLog(writerTmp, "2", "", "E", "E02-B", "args[1] i.e. sy-uname not specified.");
                 writeLog(writerTmp, "", "End DateTime", "", "", new Date().toString());
                 writerTmp.close();
                 System.out.println("Execution end : " + new Date().toString());
@@ -145,13 +145,13 @@ public class Main {
         }
         if (args.length < 3) {
             sno++;
-            writeLog(writer, sno + "", "", "E", "E12", "args[2] i.e. password not specified.");
+            writeLog(writer, sno + "", "", "E", "E12-A", "args[2] i.e. password not specified.");
             closeWriter(writer, writerTmp);
             return;
         } else {
             if (args[2] == null) {
                 sno++;
-                writeLog(writer, sno + "", "", "E", "E12", "args[2] i.e. password not specified.");
+                writeLog(writer, sno + "", "", "E", "E12-B", "args[2] i.e. password not specified.");
                 closeWriter(writer, writerTmp);
                 return;
             } else {
