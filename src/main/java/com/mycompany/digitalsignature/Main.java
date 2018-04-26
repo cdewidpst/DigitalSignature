@@ -32,11 +32,19 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.Timestamp;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -325,7 +333,7 @@ public class Main {
         }
         if (getCertificateAndPk(pfx_file_path, pfx_file_pass)) {
             sno++;
-            writeLog(writer, sno + "", "", "S", "S27", "Read certificate and password verified successful.");
+            writeLog(writer, sno + "", "", "S", "S27", "Read certificate & password & validity verified successful.");
         } else {
             sno++;
             writeLog(writer, sno + "", "", status, msg_code, remarks);
@@ -426,6 +434,24 @@ public class Main {
         try {
             KeyStore ks = KeyStore.getInstance("pkcs12");
             ks.load(new FileInputStream(pfx_file_path), pfx_file_pass.toCharArray());
+            Enumeration e = ks.aliases();
+            while (e.hasMoreElements()) {
+                String alias1 = (String) e.nextElement();
+                X509Certificate c = (X509Certificate) ks.getCertificate(alias1);
+//                System.out.println(c);
+//                String sDate1="31/12/1998";
+//                Date date1=new SimpleDateFormat("dd/MM/yyyy").parse(sDate1);
+//                System.out.println(sDate1+"\t"+date1);
+                c.checkValidity();
+//                Principal subject = c.getSubjectDN();
+//                String subjectArray[] = subject.toString().split(",");
+//                for (String s : subjectArray) {
+//                    String[] str = s.trim().split("=");
+//                    String key = str[0];
+//                    String value = str[1];
+//                    System.out.println(key + " - " + value);
+//                }
+            }
             String alias = (String) ks.aliases().nextElement();
             pk = (PrivateKey) ks.getKey(alias, pfx_file_pass.toCharArray());
             chain = ks.getCertificateChain(alias);
@@ -434,9 +460,19 @@ public class Main {
             msg_code = "E27-A";
             remarks = e1.getMessage();
             return false;
-        } catch (Exception e) {
+        } catch(CertificateNotYetValidException e2) {
             status = "E";
             msg_code = "E27-B";
+            remarks = e2.getMessage();
+            return false;
+        } catch(CertificateExpiredException e3) {
+            status = "E";
+            msg_code = "E27-C";
+            remarks = e3.getMessage();
+            return false;  
+        } catch (Exception e) {
+            status = "E";
+            msg_code = "E27-D";
             remarks = e.getMessage();
             return false;
         }
